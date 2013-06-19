@@ -126,11 +126,17 @@ class DataSelector(BaseInterface):
         if "trial_number" in df.keys():
             lsksort.append("trial_number")
         lsksort.append("onset")
+
+        ## FIXME:
+        ## the overlap check tolerance below should be configurable
         ## check for time overlap (some other event happens during another event)
         ## naive test of whether any onset begins before the previous row's end time
-        dfonset_sorted = dfonset.sort('onset')
-        idx_is_overlap = dfonset_sorted.index[~(dfonset_sorted[ENDTIME_COLNAME][:-1] <= (dfonset_sorted['onset'][1:] + 0.05))]
+        dfonset_sorted = dfonset.sort(lsksort)
+        idx_is_overlap = dfonset_sorted.index[~(dfonset_sorted[ENDTIME_COLNAME][:-1] <= (dfonset_sorted['onset'][1:] + 1.2))]
         if idx_is_overlap.shape:
+            sidx_is_overlap = idx_is_overlap.to_series()
+            sidx_is_overlap = sidx_is_overlap.append(sidx_is_overlap - 1)
+            sidx_is_overlap.sort()
             ## get the accused rows and the rows following those
             print("""
             * * * WARNING: * * *
@@ -138,7 +144,7 @@ class DataSelector(BaseInterface):
             There are overlaps in your event specification!
 
             \n%s
-            """ % (dfonset_sorted.ix[idx_is_overlap]))
+            """ % (dfonset_sorted.ix[sidx_is_overlap]))
 
         ## check for duplicate onsets
         idx_duplicated_onset = dfonset.duplicated('onset')
