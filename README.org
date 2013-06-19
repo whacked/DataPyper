@@ -1,8 +1,13 @@
-
+* a helper library for turning structured subject data into Bunch specifications for pypeline consumption
+  
+  work in progress!
+  
+  right now we're trying to get it to read a specific kind of csv and output =Bunch=es based on simple logical rules
+  
 * special directives
-
+  
 ** remove!
-
-removes all rows matching the condition
-
-
+   
+   removes all rows matching the condition
+   
+   
