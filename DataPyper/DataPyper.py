@@ -109,10 +109,10 @@ class DataSelector(BaseInterface):
         for conddef in self.inputs.condition_definition:
             condname, evalstr = map(str.strip, conddef.split('=', 1))
             idx_match = eval(evalstr)
-            dcond[condname] = df[idx_match]
             if condname == "remove!":
                 df = df[~idx_match]
             else:
+                dcond[condname] = df[idx_match]
                 dcount[conddef] = dcond[condname].shape[0]
                 row_sum += dcond[condname].shape[0]
             del idx_match
