@@ -150,7 +150,7 @@ class DataSelector(BaseInterface):
             sidx_is_overlap = idx_is_overlap.to_series()
             sidx_is_overlap = sidx_is_overlap.append(sidx_is_overlap - 1)
             sidx_is_overlap.sort()
-            ## get the accused rows and the rows following those
+            ## get the accused rows and the rows preceding those
             print("""
             * * * WARNING: * * *
 
