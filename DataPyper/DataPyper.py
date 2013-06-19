@@ -117,11 +117,9 @@ class DataSelector(BaseInterface):
         ## check for time overlap (some other event happens during another event)
         ## naive test of whether any onset begins before the previous row's end time
         dfonset_sorted = dfonset.sort('onset')
-        v_is_overlap = ~(dfonset_sorted[ENDTIME_COLNAME][:-1] <= dfonset_sorted['onset'][1:])
-        if v_is_overlap.sum() > 0:
+        idx_is_overlap = dfonset_sorted.index[~(dfonset_sorted[ENDTIME_COLNAME][:-1] <= (dfonset_sorted['onset'][1:] + 0.05))]
+        if idx_is_overlap.shape:
             ## get the accused rows and the rows following those
-            idx_is_overlap = np.hstack((np.where(v_is_overlap)[0], np.where(v_is_overlap)[0] + 1))
-            idx_is_overlap.sort()
             print("""
             * * * WARNING: * * *
 
