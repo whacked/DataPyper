@@ -87,13 +87,13 @@ class DataSelector(BaseInterface):
         dcond = {}
         dcount = {}
         row_sum = 0
-        dfonset = pd.DataFrame()
         for conddef in self.inputs.condition_definition:
             condname, evalstr = map(str.strip, conddef.split('=', 1))
             dcond[condname] = df[eval(evalstr)]
             dcount[conddef] = dcond[condname].shape[0]
             row_sum += dcond[condname].shape[0]
-            dfonset = dfonset.append(dcond[condname])
+
+        dfonset = pd.concat(dcond.values()).sort('onset')
 
         ## check for time overlap (some other event happens during another event)
         ## naive test of whether any onset begins before the previous row's end time
