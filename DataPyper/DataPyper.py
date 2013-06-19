@@ -112,8 +112,20 @@ class DataSelector(BaseInterface):
             dcount[conddef] = dcond[condname].shape[0]
             row_sum += dcond[condname].shape[0]
 
-        dfonset = pd.concat(dcond.values()).sort('onset')
+        dfonset = pd.concat(dcond.values())
 
+        ## FIXME
+        ## make this more flexible
+        ## essentially we want to sort from slow to fast
+        ## on certain given columns
+        ## i.e. run -> trial -> onset
+        ## because a similar onset may appear over different runs
+        lsksort = []
+        if "run_number" in df.keys():
+            lsksort.append("run_number")
+        if "trial_number" in df.keys():
+            lsksort.append("trial_number")
+        lsksort.append("onset")
         ## check for time overlap (some other event happens during another event)
         ## naive test of whether any onset begins before the previous row's end time
         dfonset_sorted = dfonset.sort('onset')
