@@ -69,7 +69,8 @@ class DataSelectorOutputSpec(TraitedSpec):
     should be list of Bunch objects
     
     """
-    data_frame = traits.Any()
+    ## data_frame = traits.Any()
+    subject_info = traits.Any()
 
 class DataSelector(BaseInterface):
 
@@ -85,7 +86,8 @@ class DataSelector(BaseInterface):
 
     def _list_outputs(self):
         outputs = self.output_spec().get()
-        outputs['data_frame'] = self._data_frame
+        ## outputs['data_frame'] = self._data_frame
+        outputs['subject_info'] = self._subject_info
         return outputs
 
     def _k2var(self, k):
@@ -184,7 +186,14 @@ class DataSelector(BaseInterface):
                     %s
                     """ % (row_sum, df.shape[0], str("\n"+(" " * 20)).join(["(%s) %s"%(str(count).rjust(3), conddef) for conddef,count in dcount.items()])))
 
-        self._data_frame = self.inputs.data_frame
+        ## self._data_frame = self.inputs.data_frame
+        lsk = dcond.keys()
+        self._subject_info = Bunch(
+                conditions = lsk,
+                onsets = [dcond[k]['onset'].tolist() for k in lsk],
+                durations = [dcond[k]['duration'].tolist() for k in lsk],
+                )
+
         runtime.returncode = 0
         return runtime
 
