@@ -161,7 +161,7 @@ class DataSelector(BaseInterface):
             """ % (dfonset[dfonset['onset'].isin(v_duplicated_onset)][col_display]))
 
         ## check for over-specified model
-        if not row_sum < DF.shape[0]:
+        if not row_sum < df.shape[0]:
             raise Exception("""
                     There are more events in your specification
                     than there are total rows in the data!
@@ -171,9 +171,9 @@ class DataSelector(BaseInterface):
                     The conditions you specified:
                     =============================
                     %s
-                    """ % (row_sum, DF.shape[0], str("\n"+(" " * 20)).join(["(%s) %s"%(str(count).rjust(3), conddef) for conddef,count in dcount.items()])))
+                    """ % (row_sum, df.shape[0], str("\n"+(" " * 20)).join(["(%s) %s"%(str(count).rjust(3), conddef) for conddef,count in dcount.items()])))
 
-        self._data_frame = (self.inputs.data_frame)
+        self._data_frame = self.inputs.data_frame
         runtime.returncode = 0
         return runtime
 
