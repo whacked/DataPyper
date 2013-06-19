@@ -1,0 +1,8 @@
+
+* special directives
+
+** remove!
+
+removes all rows matching the condition
+
+
