@@ -9,6 +9,11 @@ import nipype.pipeline.engine as pe
 
 class CSVFileInputSpec(TraitedSpec):                                                                                                 
     csv_filepath = traits.File(mandatory = True, desc = "path to input csv file")
+    rename_header = traits.Dict(desc = """
+    dictionary of the form
+
+    headername : newheadername
+    """)
 
 class CSVFileOutputSpec(TraitedSpec):
     """
@@ -36,7 +41,11 @@ class CSVFile(BaseInterface):
 
     def _run_interface(self, runtime):
         cwd = os.getcwd()
-        self._data_frame = pd.read_csv(self.inputs.csv_filepath)
+        df = pd \
+                .read_csv(self.inputs.csv_filepath) \
+                .rename(columns = self.inputs.rename_header) \
+                .sort('onset')
+
         runtime.returncode = 0
         return runtime
 
