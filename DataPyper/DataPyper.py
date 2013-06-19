@@ -132,8 +132,14 @@ class DataSelector(BaseInterface):
         ## check for time overlap (some other event happens during another event)
         ## naive test of whether any onset begins before the previous row's end time
         dfonset_sorted = dfonset.sort(lsksort)
-        idx_is_overlap = dfonset_sorted.index[~(dfonset_sorted[ENDTIME_COLNAME][:-1] <= (dfonset_sorted['onset'][1:] + 1.2))]
-        if idx_is_overlap.shape:
+        idx_is_overlap = dfonset_sorted.index[(
+            ## next event's onset time + tolerance < this event's end time
+            ((dfonset_sorted['onset'][1:] + 1.2) < dfonset_sorted[ENDTIME_COLNAME][:-1])
+            ## the check only applies when the
+            ## next event's onset time must also > this event's onset time
+            & (dfonset_sorted['onset'][:-1] < dfonset_sorted['onset'][1:])
+            )]
+        if len(idx_is_overlap):
             sidx_is_overlap = idx_is_overlap.to_series()
             sidx_is_overlap = sidx_is_overlap.append(sidx_is_overlap - 1)
             sidx_is_overlap.sort()
