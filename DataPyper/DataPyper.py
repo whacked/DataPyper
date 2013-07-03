@@ -63,6 +63,7 @@ class CSVFile(BaseInterface):
 class DataSelectorInputSpec(TraitedSpec):                                                                                                 
     data_frame = traits.Any() # should be a pandas DataFrame
     condition_definition = traits.List()
+    function_definition = traits.List()
 
 class DataSelectorOutputSpec(TraitedSpec):
     """
@@ -99,6 +100,11 @@ class DataSelector(BaseInterface):
         cwd = os.getcwd()
         df = self.inputs.data_frame
 
+        self._dfn = {}
+        if self.inputs.function_definition:
+            for fn in self.inputs.function_definition:
+                self._dfn[fn.__name__] = fn
+
         df[ENDTIME_COLNAME] = df['onset'] + df['duration']
         for k in df.keys():
             if k.startswith("Unnamed"): continue
@@ -109,8 +115,18 @@ class DataSelector(BaseInterface):
         dcount = {}
         row_sum = 0
         for conddef in self.inputs.condition_definition:
-            condname, evalstr = map(str.strip, conddef.split('=', 1))
-            idx_match = eval(evalstr)
+            spl_conddef = conddef.split('=', 1)
+
+            # assume the condition is specified directly by a derivation function
+            if len(spl_conddef) == 1:
+                condname = evalstr = spl_conddef[0]
+            else:
+                condname, evalstr = map(str.strip, spl_conddef)
+            
+            if evalstr in self._dfn:
+                idx_match = self._dfn[evalstr](df)
+            else:
+                idx_match = eval(evalstr)
             if condname == "remove!":
                 df = df[~idx_match]
             else:
@@ -227,8 +243,11 @@ if __name__ == "__main__":
 
         csvf = pe.Node(name = "csvfile", interface = CSVFile())
         csvf.inputs.csv_filepath = csv_filepath
-        # res = csvf.run()
-
+        csvf.inputs.rename_header = {
+                'current_time': 'onset',
+                
+                }
+        ## res = csvf.run()
         ds = pe.Node(name = "dataselector", interface = DataSelector())
         ds.inputs.condition_definition = [
                 "run1 = onset >= 10",
@@ -246,8 +265,29 @@ if __name__ == "__main__":
         res = wf.run()
 
         os.unlink(csv_filepath)
+    else:
 
-    except Exception, e:
-        raise e
+        from pdloader import df
+
+        ds = DataSelector(
+                data_frame = df,
+                condition_definition = [
+                "remove! = label.str.contains('INFO:wait_for_scanner')",
+                "PROD_run_1 = (run_number == 1) & (evname == 'PRODUCT')",
+                "chose_yes = (run_number == 1) & (evname == 'CHOICE') & (response == 1)",
+                "chose_no", # or "chose_no = chose_no" or "whatever = chose_no"
+            ])
+
+        def chose_no(df):
+            return df['response'] != 1
+
+        ds.inputs.function_definition = [
+                chose_no,
+                ]
+        res = ds.run()
+        print res.outputs
+
+    #except Exception, e:
+    #    raise e
 
 
