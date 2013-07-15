@@ -115,25 +115,30 @@ class DataSelector(BaseInterface):
         dcount = {}
         row_sum = 0
         for conddef in self.inputs.condition_definition:
-            spl_conddef = conddef.split('=', 1)
+            if type(conddef) is tuple:
+                condname, condfn = conddef
+                idx_match = condfn(df)
+            else:
+                spl_conddef = conddef.split('=', 1)
 
-            # assume the condition is specified directly by a derivation function
-            if len(spl_conddef) == 1:
-                condname = evalstr = spl_conddef[0]
-            else:
-                condname, evalstr = map(str.strip, spl_conddef)
-            
-            if evalstr in self._dfn:
-                idx_match = self._dfn[evalstr](df)
-            else:
-                idx_match = eval(evalstr)
-            if condname == "remove!":
-                df = df[~idx_match]
-            else:
-                dcond[condname] = df[idx_match]
-                dcount[conddef] = dcond[condname].shape[0]
-                row_sum += dcond[condname].shape[0]
-            del idx_match
+                # assume the condition is specified directly by a derivation function
+                if len(spl_conddef) == 1:
+                    condname = evalstr = spl_conddef[0]
+                else:
+                    condname, evalstr = map(str.strip, spl_conddef)
+                
+                if evalstr in self._dfn:
+                    idx_match = self._dfn[evalstr](df)
+                else:
+                    idx_match = eval(evalstr)
+
+        if condname == "remove!":
+            df = df[~idx_match]
+        else:
+            dcond[condname] = df[idx_match]
+            dcount[conddef] = dcond[condname].shape[0]
+            row_sum += dcond[condname].shape[0]
+        del idx_match
 
         dfonset = pd.concat(dcond.values())
 
