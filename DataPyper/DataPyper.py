@@ -137,13 +137,13 @@ class DataSelector(BaseInterface):
                 else:
                     idx_match = eval(evalstr)
 
-        if condname == "remove!":
-            df = df[~idx_match]
-        else:
-            dcond[condname] = df[idx_match]
-            dcount[conddef] = dcond[condname].shape[0]
-            row_sum += dcond[condname].shape[0]
-        del idx_match
+            if condname == "remove!":
+                df = df[~idx_match]
+            else:
+                dcond[condname] = df[idx_match]
+                dcount[conddef] = dcond[condname].shape[0]
+                row_sum += dcond[condname].shape[0]
+            del idx_match
 
         dfonset = pd.concat(dcond.values())
 
