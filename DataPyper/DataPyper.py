@@ -63,7 +63,10 @@ class CSVFile(BaseInterface):
 class DataSelectorInputSpec(TraitedSpec):                                                                                                 
     data_frame = traits.Any() # should be a pandas DataFrame
     condition_definition = traits.List()
+    # TODO
+    # should make this Any() and allow Dict as well
     function_definition = traits.List()
+    condition_value_feeder = traits.Dict()
 
 class DataSelectorOutputSpec(TraitedSpec):
     """
@@ -125,7 +128,8 @@ class DataSelector(BaseInterface):
                 if len(spl_conddef) == 1:
                     condname = evalstr = spl_conddef[0]
                 else:
-                    condname, evalstr = map(str.strip, spl_conddef)
+                    condname = spl_conddef[0].strip()
+                    evalstr = spl_conddef[1].strip().format(**(self.inputs.condition_value_feeder or {}))
                 
                 if evalstr in self._dfn:
                     idx_match = self._dfn[evalstr](df)
@@ -286,7 +290,7 @@ if __name__ == "__main__":
                 condition_definition = [
                 "remove! = label.str.contains('INFO:wait_for_scanner')",
                 "PROD_run_1 = (run_number == 1) & (evname == 'PRODUCT')",
-                "chose_yes = (run_number == 1) & (evname == 'CHOICE') & (response == 1)",
+                "chose_yes = (run_number == {run_number}) & (evname == 'CHOICE') & (response == 1)",
                 ## "chose_no", # or "chose_no = chose_no" or "whatever = chose_no"
                 ("chose_no", chose_no), # or "chose_no = chose_no" or "whatever = chose_no"
             ])
@@ -294,6 +298,10 @@ if __name__ == "__main__":
         ds.inputs.function_definition = [
                 chose_no,
                 ]
+        ds.inputs.condition_value_feeder = {
+                'run_number': 1,
+                
+                }
         res = ds.run()
         print res.outputs
 
