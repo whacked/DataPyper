@@ -274,17 +274,18 @@ if __name__ == "__main__":
 
         from pdloader import df
 
+        def chose_no(df):
+            return df['response'] != 1
+
         ds = DataSelector(
                 data_frame = df,
                 condition_definition = [
                 "remove! = label.str.contains('INFO:wait_for_scanner')",
                 "PROD_run_1 = (run_number == 1) & (evname == 'PRODUCT')",
                 "chose_yes = (run_number == 1) & (evname == 'CHOICE') & (response == 1)",
-                "chose_no", # or "chose_no = chose_no" or "whatever = chose_no"
+                ## "chose_no", # or "chose_no = chose_no" or "whatever = chose_no"
+                ("chose_no", chose_no), # or "chose_no = chose_no" or "whatever = chose_no"
             ])
-
-        def chose_no(df):
-            return df['response'] != 1
 
         ds.inputs.function_definition = [
                 chose_no,
