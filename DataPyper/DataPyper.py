@@ -63,9 +63,7 @@ class CSVFile(BaseInterface):
 class DataSelectorInputSpec(TraitedSpec):                                                                                                 
     data_frame = traits.Any() # should be a pandas DataFrame
     condition_definition = traits.List()
-    # TODO
-    # should make this Any() and allow Dict as well
-    function_definition = traits.List()
+    function_definition = traits.Any()
     condition_value_feeder = traits.Dict()
 
 class DataSelectorOutputSpec(TraitedSpec):
@@ -105,8 +103,11 @@ class DataSelector(BaseInterface):
 
         self._dfn = {}
         if self.inputs.function_definition:
-            for fn in self.inputs.function_definition:
-                self._dfn[fn.__name__] = fn
+            if type(self.inputs.function_definition) is list:
+                for fn in self.inputs.function_definition:
+                    self._dfn[fn.__name__] = fn
+            else:
+                self._dfn = self.inputs.function_definition
 
         df[ENDTIME_COLNAME] = df['onset'] + df['duration']
         for k in df.keys():
