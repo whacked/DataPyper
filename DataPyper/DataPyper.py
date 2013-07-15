@@ -223,8 +223,12 @@ if __name__ == "__main__":
     
 
     from pandas import DataFrame as DF
+    import sys
 
-    try:
+    ## this stuff should be moved to a unit test
+    if "--test" in sys.argv:
+
+
         ## generate some random csv datastructure
         import faker, random, tempfile
         FK = faker.Faker()
