@@ -40,6 +40,7 @@ class CSVFile(BaseInterface):
         return outputs
 
     def _run_interface(self, runtime):
+        self.inputs.rename_header = self.inputs.rename_header or {}
         cwd = os.getcwd()
         df = pd \
                 .read_csv(self.inputs.csv_filepath) \
