@@ -2,7 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 
-from nipype.interfaces.base import TraitedSpec, BaseInterface, Bunch
+from nipype.interfaces.base import TraitedSpec, BaseInterface, Bunch, isdefined
 from nipype.interfaces.traits_extension import traits # , File
 import nipype.pipeline.engine as pe
 
@@ -65,7 +65,26 @@ class DataSelectorInputSpec(TraitedSpec):
     data_frame = traits.Any() # should be a pandas DataFrame
     condition_definition = traits.List()
     function_definition = traits.Any()
-    condition_value_feeder = traits.Dict()
+    condition_value_feeder = traits.Dict(traits.Str, value = {}, usedefault = True)
+
+    # copied from DataSink
+    def __setattr__(self, key, value):
+        if key not in self.copyable_trait_names():
+            if not isdefined(value):
+                super(DataSelectorInputSpec, self).__setattr__(key, value)
+            self.condition_value_feeder[key] = value
+        else:
+            if key in self.condition_value_feeder:
+                self.condition_value_feeder[key] = value
+            super(DataSelectorInputSpec, self).__setattr__(key, value)
+
+    def __getattr__(self, key):
+        if key not in self.condition_value_feeder:
+            if len(self.condition_value_feeder) is 0:
+                self.__setattr__(key, traits.Any())
+            else:
+                return None
+        return self.condition_value_feeder[key]
 
 class DataSelectorOutputSpec(TraitedSpec):
     """
@@ -131,7 +150,7 @@ class DataSelector(BaseInterface):
                     condname = evalstr = spl_conddef[0]
                 else:
                     condname = spl_conddef[0].strip()
-                    evalstr = spl_conddef[1].strip().format(**(self.inputs.condition_value_feeder or {}))
+                    evalstr = spl_conddef[1].strip().format(**self.inputs.condition_value_feeder)
                 
                 if evalstr in self._dfn:
                     idx_match = self._dfn[evalstr](df)
