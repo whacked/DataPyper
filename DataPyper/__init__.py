@@ -7,6 +7,11 @@ from nipype.interfaces.traits_extension import traits # , File
 import nipype.pipeline.engine as pe
 
 
+## TODO
+# in the exec part pandas doesn't like columns with dots in them
+# perhaps force rename header on read, or find out how to make it work
+
+
 class CSVFileInputSpec(TraitedSpec):                                                                                                 
     csv_filepath = traits.File(mandatory = True, desc = "path to input csv file")
     rename_header = traits.Dict(desc = """
@@ -220,7 +225,7 @@ class DataSelector(BaseInterface):
             """ % (dfonset[dfonset['onset'].isin(v_duplicated_onset)][col_display]))
 
         ## check for over-specified model
-        if not row_sum < df.shape[0]:
+        if row_sum > df.shape[0]:
             raise Exception("""
                     There are more events in your specification
                     than there are total rows in the data!
@@ -313,16 +318,17 @@ if __name__ == "__main__":
                 "PROD_run_1 = (run_number == 1) & (evname == 'PRODUCT')",
                 "chose_yes = (run_number == {run_number}) & (evname == 'CHOICE') & (response == 1)",
                 ## "chose_no", # or "chose_no = chose_no" or "whatever = chose_no"
-                ("chose_no", chose_no), # or "chose_no = chose_no" or "whatever = chose_no"
+                ## ("chose_no", chose_no), # or "chose_no = chose_no" or "whatever = chose_no"
             ])
 
         ds.inputs.function_definition = [
                 chose_no,
                 ]
-        ds.inputs.condition_value_feeder = {
-                'run_number': 1,
-                
-                }
+        ## ds.inputs.condition_value_feeder = {
+        ##         'run_number': 1,
+        ##         
+        ##         }
+        ds.inputs.run_number = 1
         res = ds.run()
         print res.outputs
 
