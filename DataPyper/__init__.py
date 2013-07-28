@@ -1,10 +1,163 @@
 import os
 import numpy as np
 import pandas as pd
+import glob
 
 from nipype.interfaces.base import TraitedSpec, BaseInterface, Bunch, isdefined
 from nipype.interfaces.traits_extension import traits # , File
+from nipype.interfaces.io import DataGrabberInputSpec, DataGrabber
+from nipype.utils.filemanip import list_to_filename
 import nipype.pipeline.engine as pe
+
+import paramiko
+import sys, os
+from os.path import join as pjoin, split as psplit, exists as pexists
+from distutils.dir_util import mkpath
+
+import execnet
+import getpass
+
+def remote_glob(dspec, glob_string):
+    '''
+    dspec is a dict of username, hostname
+    '''
+    gw = execnet.makegateway('ssh=%s@%s' % (dspec['username'], dspec['hostname']))
+    channel = gw.remote_exec("""
+            import sys, os, glob
+            channel.send(glob.glob('{glob_string}'))
+    """.format(glob_string = glob_string))
+    return channel.receive()
+
+def download_from_sftp(remote_filepath_list, LOCAL_CACHE_BASE_DIR, HOSTNAME, PORT, USERNAME, PRIVATE_KEY, PRINTSTATUS = True):
+
+    ## ssh = paramiko.SSHClient()
+    ## ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ## ssh.connect(_hostname, username = _username, pkey = PRIVATE_KEY)
+    ## ssh.exec_command('ls -l "%s"' % GLOB_STRING)
+
+    print((HOSTNAME, PORT))
+    transport = paramiko.Transport((HOSTNAME, PORT))
+    ## transport.connect(username = _username, password = _password)
+    transport.connect(username = USERNAME, pkey = PRIVATE_KEY)
+    sftp = paramiko.SFTPClient.from_transport(transport)
+
+    out = []
+    for remote_filepath in remote_filepath_list:
+        local_filepath = pjoin(LOCAL_CACHE_BASE_DIR, remote_filepath.lstrip(os.path.sep))
+        local_filedir  = psplit(local_filepath)[0]
+        if not pexists(local_filedir):
+            mkpath(local_filedir)
+        if not pexists(local_filepath):
+            if PRINTSTATUS:
+                print " " + "_" * (len(local_filepath)+8)
+                print "/ <--    %s" % remote_filepath
+                print "\\" + "____--> %s" % local_filepath
+            ## sftp.get(remote_filepath, local_filepath)
+        out.append(local_filepath)
+    return out
+
+class RemoteDataGrabberInputSpec(DataGrabberInputSpec):
+    # host configuration
+    hostname = traits.Str(mandatory = True, desc='server hostname',)
+    port = traits.Int(22, usedefault = True, )
+    username = traits.Str(mandatory = True,)
+
+    # datagrabber base configuration
+    base_directory = traits.Str(desc='base directory on the REMOTE host',)
+    local_cache_directory = traits.Str(mandatory=True, desc='base directory on the local host, where the files mirrored from the remote will be stored',)
+
+class RemoteDataGrabber(DataGrabber):
+    input_spec = RemoteDataGrabberInputSpec
+
+    def _map_to_local_cache(self, filelist):
+        PRIVATE_KEY = paramiko.RSAKey.from_private_key_file(os.path.expanduser('~/.ssh/id_rsa'), password = _PASSPHRASE)
+        return download_from_sftp(filelist, self.inputs.local_cache_directory,
+                self.inputs.hostname, self.inputs.port,
+                self.inputs.username, PRIVATE_KEY)
+
+    # copied from https://github.com/nipy/nipype/blob/d75713d1269e5f5ce9a650055ba793b90d358333/nipype/interfaces/io.py#L368
+    def _list_outputs(self):
+        # infields are mandatory, however I could not figure out how to set 'mandatory' flag dynamically
+        # hence manual check
+        if self._infields:
+            for key in self._infields:
+                value = getattr(self.inputs, key)
+                if not isdefined(value):
+                    msg = "%s requires a value for input '%s' because it was listed in 'infields'" % \
+                        (self.__class__.__name__, key)
+                    raise ValueError(msg)
+
+        outputs = {}
+        for key, args in self.inputs.template_args.items():
+            outputs[key] = []
+            template = self.inputs.template
+            if hasattr(self.inputs, 'field_template') and \
+                    isdefined(self.inputs.field_template) and \
+                    key in self.inputs.field_template:
+                template = self.inputs.field_template[key]
+            if isdefined(self.inputs.base_directory):
+                template = os.path.join(
+                    os.path.abspath(self.inputs.base_directory), template)
+            else:
+                template = os.path.abspath(template)
+            if not args:
+                filelist = self._map_to_local_cache(remote_glob(dict(username = self.inputs.username, hostname = self.inputs.hostname), template))
+                if len(filelist) == 0:
+                    msg = 'Output key: %s Template: %s returned no files' % (
+                        key, template)
+                    if self.inputs.raise_on_empty:
+                        raise IOError(msg)
+                    else:
+                        warn(msg)
+                else:
+                    if self.inputs.sort_filelist:
+                        filelist.sort()
+                    outputs[key] = list_to_filename(filelist)
+            for argnum, arglist in enumerate(args):
+                maxlen = 1
+                for arg in arglist:
+                    if isinstance(arg, str) and hasattr(self.inputs, arg):
+                        arg = getattr(self.inputs, arg)
+                    if isinstance(arg, list):
+                        if (maxlen > 1) and (len(arg) != maxlen):
+                            raise ValueError('incompatible number of arguments for %s' % key)
+                        if len(arg) > maxlen:
+                            maxlen = len(arg)
+                outfiles = []
+                for i in range(maxlen):
+                    argtuple = []
+                    for arg in arglist:
+                        if isinstance(arg, str) and hasattr(self.inputs, arg):
+                            arg = getattr(self.inputs, arg)
+                        if isinstance(arg, list):
+                            argtuple.append(arg[i])
+                        else:
+                            argtuple.append(arg)
+                    filledtemplate = template
+                    if argtuple:
+                        try:
+                            filledtemplate = template%tuple(argtuple)
+                        except TypeError as e:
+                            raise TypeError(e.message + ": Template %s failed to convert with args %s"%(template, str(tuple(argtuple))))
+                    outfiles = self._map_to_local_cache(remote_glob(dict(username = self.inputs.username, hostname = self.inputs.hostname), illedtemplate))
+                    if len(outfiles) == 0:
+                        msg = 'Output key: %s Template: %s returned no files' % (key, filledtemplate)
+                        if self.inputs.raise_on_empty:
+                            raise IOError(msg)
+                        else:
+                            warn(msg)
+                        outputs[key].insert(i, None)
+                    else:
+                        if self.inputs.sort_filelist:
+                            outfiles.sort()
+                        outputs[key].insert(i, list_to_filename(outfiles))
+            if any([val is None for val in outputs[key]]):
+                outputs[key] = []
+            if len(outputs[key]) == 0:
+                outputs[key] = None
+            elif len(outputs[key]) == 1:
+                outputs[key] = outputs[key][0]
+        return outputs
 
 
 ## TODO
@@ -254,6 +407,12 @@ if __name__ == "__main__":
 
     from pandas import DataFrame as DF
     import sys
+
+
+    if "--test-datagrabber" in sys.argv:
+        print 'OK'
+
+        sys.exit()
 
     ## this stuff should be moved to a unit test
     if "--test" in sys.argv:
