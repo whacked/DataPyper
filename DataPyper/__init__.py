@@ -66,10 +66,10 @@ class RemoteDataGrabberInputSpec(DataGrabberInputSpec):
     port = traits.Int(22, usedefault = True, )
     username = traits.Str(desc='username used for SFTP to the remote host',)
     passphrase = traits.Str(desc='passphrase for private key, if applicable')
+    local_cache_directory = traits.Str(desc='base directory on the local host, where the files mirrored from the remote will be stored',)
 
     # datagrabber base configuration
     base_directory = traits.Str(desc='base directory on the REMOTE host',)
-    local_cache_directory = traits.Str(mandatory=True, desc='base directory on the local host, where the files mirrored from the remote will be stored',)
 
 class RemoteDataGrabber(DataGrabber):
     input_spec = RemoteDataGrabberInputSpec
