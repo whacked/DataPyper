@@ -56,11 +56,16 @@ def download_from_sftp(remote_filepath_list, LOCAL_CACHE_BASE_DIR, HOSTNAME, POR
         out.append(local_filepath)
     return out
 
+## TODO
+## make server config non-mandatory
+## and make the grabber fallback to local filesystem
+## (i.e. passthrough to base datagrabber) when not supplied
 class RemoteDataGrabberInputSpec(DataGrabberInputSpec):
     # host configuration
     hostname = traits.Str(mandatory = True, desc='server hostname',)
     port = traits.Int(22, usedefault = True, )
     username = traits.Str(mandatory = True,)
+    passphrase = traits.Str(desc='passphrase for private key, if applicable')
 
     # datagrabber base configuration
     base_directory = traits.Str(desc='base directory on the REMOTE host',)
@@ -70,7 +75,7 @@ class RemoteDataGrabber(DataGrabber):
     input_spec = RemoteDataGrabberInputSpec
 
     def _map_to_local_cache(self, filelist):
-        PRIVATE_KEY = paramiko.RSAKey.from_private_key_file(os.path.expanduser('~/.ssh/id_rsa'), password = _PASSPHRASE)
+        PRIVATE_KEY = paramiko.RSAKey.from_private_key_file(os.path.expanduser('~/.ssh/id_rsa'), password = self.inputs.passphrase)
         return download_from_sftp(filelist, self.inputs.local_cache_directory,
                 self.inputs.hostname, self.inputs.port,
                 self.inputs.username, PRIVATE_KEY)
