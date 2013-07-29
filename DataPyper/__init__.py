@@ -65,6 +65,8 @@ class RemoteDataGrabberInputSpec(DataGrabberInputSpec):
     hostname = traits.Str(desc='server hostname',)
     port = traits.Int(22, usedefault = True, )
     username = traits.Str(desc='username used for SFTP to the remote host',)
+    ## TODO this is a BAD IDEA WTF ARE YOU THINKING
+    ## FIXME FIXME FIXME
     passphrase = traits.Str(desc='passphrase for private key, if applicable')
     local_cache_directory = traits.Str(desc='base directory on the local host, where the files mirrored from the remote will be stored',)
 
@@ -75,6 +77,7 @@ class RemoteDataGrabber(DataGrabber):
     input_spec = RemoteDataGrabberInputSpec
 
     def _map_to_local_cache(self, filelist):
+        print "BAD IDEA BAD IDEA BAD IDEA"
         PRIVATE_KEY = paramiko.RSAKey.from_private_key_file(os.path.expanduser('~/.ssh/id_rsa'), password = self.inputs.passphrase)
         return download_from_sftp(filelist, self.inputs.local_cache_directory,
                 self.inputs.hostname, self.inputs.port,
