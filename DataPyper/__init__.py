@@ -52,7 +52,7 @@ def download_from_sftp(remote_filepath_list, LOCAL_CACHE_BASE_DIR, HOSTNAME, POR
                 print " " + "_" * (len(local_filepath)+8)
                 print "/ <--    %s" % remote_filepath
                 print "\\" + "____--> %s" % local_filepath
-            ## sftp.get(remote_filepath, local_filepath)
+            sftp.get(remote_filepath, local_filepath)
         out.append(local_filepath)
     return out
 
