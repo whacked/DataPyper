@@ -62,9 +62,9 @@ def download_from_sftp(remote_filepath_list, LOCAL_CACHE_BASE_DIR, HOSTNAME, POR
 ## (i.e. passthrough to base datagrabber) when not supplied
 class RemoteDataGrabberInputSpec(DataGrabberInputSpec):
     # host configuration
-    hostname = traits.Str(mandatory = True, desc='server hostname',)
+    hostname = traits.Str(desc='server hostname',)
     port = traits.Int(22, usedefault = True, )
-    username = traits.Str(mandatory = True,)
+    username = traits.Str(desc='username used for SFTP to the remote host',)
     passphrase = traits.Str(desc='passphrase for private key, if applicable')
 
     # datagrabber base configuration
@@ -106,7 +106,10 @@ class RemoteDataGrabber(DataGrabber):
             else:
                 template = os.path.abspath(template)
             if not args:
-                filelist = self._map_to_local_cache(remote_glob(dict(username = self.inputs.username, hostname = self.inputs.hostname), template))
+                if self.inputs.hostname and self.inputs.username:
+                    filelist = self._map_to_local_cache(remote_glob(dict(username = self.inputs.username, hostname = self.inputs.hostname), template))
+                else:
+                    filelist = glob.glob(template)
                 if len(filelist) == 0:
                     msg = 'Output key: %s Template: %s returned no files' % (
                         key, template)
@@ -144,7 +147,10 @@ class RemoteDataGrabber(DataGrabber):
                             filledtemplate = template%tuple(argtuple)
                         except TypeError as e:
                             raise TypeError(e.message + ": Template %s failed to convert with args %s"%(template, str(tuple(argtuple))))
-                    outfiles = self._map_to_local_cache(remote_glob(dict(username = self.inputs.username, hostname = self.inputs.hostname), illedtemplate))
+                    if self.inputs.hostname and self.inputs.username:
+                        outfiles = self._map_to_local_cache(remote_glob(dict(username = self.inputs.username, hostname = self.inputs.hostname), filledtemplate))
+                    else:
+                        outfiles = glob.glob(filledtemplate)
                     if len(outfiles) == 0:
                         msg = 'Output key: %s Template: %s returned no files' % (key, filledtemplate)
                         if self.inputs.raise_on_empty:
