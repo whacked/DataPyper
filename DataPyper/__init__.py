@@ -223,11 +223,11 @@ class CSVFile(BaseInterface):
         if (df.columns == "duration").sum() == 0:
             df['duration'] = df['onset'].diff().shift(-1)
 
-        ## FIXME
-        ## stuff the last value with the mean duration
-        ## there isn't any empirical reason why this is
-        ## a good idea
-        df['duration'][-1:] = df['duration'].mean()
+            ## FIXME
+            ## stuff the last value with the mean duration
+            ## there isn't any empirical reason why this is
+            ## a good idea
+            df['duration'][-1:] = df['duration'].mean()
         self._data_frame = df
         runtime.returncode = 0
         return runtime
