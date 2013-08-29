@@ -67,11 +67,28 @@ class CSVFile(BaseInterface):
 
 
 class DataSelectorInputSpec(TraitedSpec):                                                                                                 
-    data_frame             = traits.Any() # should be a pandas DataFrame
     amplitude_column       = traits.Str(mandatory = False, desc = "which column to use as regressor height")
+    data_frame             = traits.Any(desc = "input Pandas DataFrame object")
     condition_definition   = traits.List()
     function_definition    = traits.Any()
-    condition_value_feeder = traits.Dict(traits.Str, value = {}, usedefault = True)
+    condition_value_feeder = traits.Dict(traits.Str, value = {}, usedefault = True,
+            desc = """\
+                    a "value feeder" that should be an input coming in from
+                    e.g. an IdentityInterface node, like subject_id or
+                    run_number;
+
+                    this value gets used by template substitution prior
+                    evaluation of the condition_definition strings.
+
+                    Example:
+                    select all rows with run number 1, you can do
+
+                        (runnum == {run_number})
+
+                    which implies your DataFrame has a colum called 'runnum',
+                    and you will supply the actual value at run-time to the
+                    input port called 'run_number'
+            """)
 
     # copied from DataSink
     def __setattr__(self, key, value):
