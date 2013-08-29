@@ -67,7 +67,6 @@ class CSVFile(BaseInterface):
 
 
 class DataSelectorInputSpec(TraitedSpec):                                                                                                 
-    amplitude_column       = traits.Str(mandatory = False, desc = "which column to use as regressor height")
     data_frame             = traits.Any(desc = "input Pandas DataFrame object")
     condition_definition   = traits.List(desc = """\
                     a list of strings specifying the condition selection
@@ -109,6 +108,36 @@ class DataSelectorInputSpec(TraitedSpec):
                     which implies your DataFrame has a colum called 'runnum',
                     and you will supply the actual value at run-time to the
                     input port called 'run_number'
+            """)
+    amplitude_definition   = traits.Any(desc = """\
+                    `string` specifying the column name to be used as the
+                    regressor height (note this gets ignored in SPM level 1)
+                    per nipype doc
+
+                    http://nipy.sourceforge.net/nipype/interfaces/generated/nipype.algorithms.modelgen.html
+
+                    Example:
+                        
+                        amplitude_definition = 'response_time'
+
+                    ***OR***
+
+                    `dictionary` that maps the condition's column name to the
+                    desired regressor height's column name. this implies that
+                    you should set up your data table's regressors prior
+                    calling DataSelector. Anything that isn't mapped in the
+                    dictionary will get assigned `None`, which in
+                    CNELevel1Design will get a height of 1
+
+                    Example:
+
+                        amplitude_definition = {
+                            'product': 'price',
+                            'choice': 'response_time',
+                        }
+
+                    (Although arbitrary manipulation can be done through the
+                    function_definition input, that really should be avoided)
             """)
 
     # copied from DataSink
@@ -277,13 +306,21 @@ class DataSelector(BaseInterface):
                     """ % (row_sum, df.shape[0], str("\n"+(" " * 20)).join(["(%s) %s"%(str(count).rjust(3), conddef) for conddef,count in dcount.items()])))
 
         ## self._data_frame = self.inputs.data_frame
-        lsk = dcond.keys()
-        lsv = dcond.values()
+        condname_list = dcond.keys()
+        if self.inputs.amplitude_definition:
+            ## assume it's a string!
+            if not type(self.inputs.amplitude_definition) is dict:
+                ampmap = dict([(condname, self.inputs.amplitude_definition) for condname in condname_list])
+            else:
+                ampmap = self.inputs.amplitude_definition
+        else:
+            ampmap = dict([(condname, None) for condname in condname_list])
+
         self._subject_info = Bunch(
-                conditions = lsk,
-                onsets     = [cond['onset'   ].tolist() for cond in lsv],
-                durations  = [cond['duration'].tolist() for cond in lsv],
-                amplitudes = self.inputs.amplitude_column and [cond[self.inputs.amplitude_column].tolist() for cond in lsv] or None,
+                conditions = condname_list,
+                onsets     = [cond['onset'   ].tolist() for cond in dcond.values()],
+                durations  = [cond['duration'].tolist() for cond in dcond.values()],
+                amplitudes = [ampmap[condname] and cond[ampmap[condname]].tolist() or None for condname in condname_list],
                 )
 
         runtime.returncode = 0
