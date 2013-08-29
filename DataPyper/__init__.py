@@ -69,7 +69,28 @@ class CSVFile(BaseInterface):
 class DataSelectorInputSpec(TraitedSpec):                                                                                                 
     amplitude_column       = traits.Str(mandatory = False, desc = "which column to use as regressor height")
     data_frame             = traits.Any(desc = "input Pandas DataFrame object")
-    condition_definition   = traits.List()
+    condition_definition   = traits.List(desc = """\
+                    a list of strings specifying the condition selection
+                    methods. The selection uses Pandas syntax, in strings, that
+                    gets eval()'ed at runtime.
+
+                    Condition names corresponding to the variables passed to
+                    the analysis program (e.g. FSL) are defined thus:
+
+                        CONDITION_NAME  =  SELECTION_STRING
+
+                    where CONDITION_NAME has no spaces; we split left and right
+                    by the single equality sign ('='). Example input:
+
+                        condition_definition = [
+                            "remove!    = label.str.contains('INFO:wait_for_scanner')",
+                            "chose_yes  = (runnum == {run_number}) & (response == 1)",
+                        ]
+
+                    `remove!` is a special directive that just drops all
+                    matching rows.
+            
+            """)
     function_definition    = traits.Any()
     condition_value_feeder = traits.Dict(traits.Str, value = {}, usedefault = True,
             desc = """\
