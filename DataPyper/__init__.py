@@ -56,20 +56,21 @@ class CSVFile(BaseInterface):
         if (df.columns == "duration").sum() == 0:
             df['duration'] = df['onset'].diff().shift(-1)
 
-        ## FIXME
-        ## stuff the last value with the mean duration
-        ## there isn't any empirical reason why this is
-        ## a good idea
-        df['duration'][-1:] = df['duration'].mean()
+            ## FIXME
+            ## stuff the last value with the mean duration
+            ## there isn't any empirical reason why this is
+            ## a good idea
+            df['duration'][-1:] = df['duration'].mean()
         self._data_frame = df
         runtime.returncode = 0
         return runtime
 
 
 class DataSelectorInputSpec(TraitedSpec):                                                                                                 
-    data_frame = traits.Any() # should be a pandas DataFrame
-    condition_definition = traits.List()
-    function_definition = traits.Any()
+    data_frame             = traits.Any() # should be a pandas DataFrame
+    amplitude_column       = traits.Str(mandatory = False, desc = "which column to use as regressor height")
+    condition_definition   = traits.List()
+    function_definition    = traits.Any()
     condition_value_feeder = traits.Dict(traits.Str, value = {}, usedefault = True)
 
     # copied from DataSink
@@ -239,10 +240,12 @@ class DataSelector(BaseInterface):
 
         ## self._data_frame = self.inputs.data_frame
         lsk = dcond.keys()
+        lsv = dcond.values()
         self._subject_info = Bunch(
                 conditions = lsk,
-                onsets = [dcond[k]['onset'].tolist() for k in lsk],
-                durations = [dcond[k]['duration'].tolist() for k in lsk],
+                onsets     = [cond['onset'   ].tolist() for cond in lsv],
+                durations  = [cond['duration'].tolist() for cond in lsv],
+                amplitudes = self.inputs.amplitude_column and [cond[self.inputs.amplitude_column].tolist() for cond in lsv] or None,
                 )
 
         runtime.returncode = 0
@@ -313,6 +316,7 @@ if __name__ == "__main__":
 
         ds = DataSelector(
                 data_frame = df,
+                amplitude_column = 'height',
                 condition_definition = [
                 "remove! = label.str.contains('INFO:wait_for_scanner')",
                 "PROD_run_1 = (run_number == 1) & (evname == 'PRODUCT')",
