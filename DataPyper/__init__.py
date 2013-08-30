@@ -310,11 +310,12 @@ class DataSelector(BaseInterface):
         if self.inputs.amplitude_definition:
             ## assume it's a string!
             if not type(self.inputs.amplitude_definition) is dict:
-                ampmap = dict([(condname, self.inputs.amplitude_definition) for condname in condname_list])
+                mapfn = lambda _: self.inputs.amplitude_definition
             else:
-                ampmap = self.inputs.amplitude_definition
+                mapfn = self.inputs.amplitude_definition.get
         else:
-            ampmap = dict([(condname, None) for condname in condname_list])
+            mapfn = lambda _: None
+        ampmap = dict([(condname, mapfn(condname)) for condname in condname_list])
 
         self._subject_info = Bunch(
                 conditions = condname_list,
