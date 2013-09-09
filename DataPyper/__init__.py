@@ -290,7 +290,7 @@ class DataSelector(BaseInterface):
 
                     \n%s
             
-            """ % (dfonset[dfonset['onset'].isin(v_duplicated_onset)][col_display]))
+            """ % (dfonset[dfonset['onset'].isin(v_duplicated_onset)][col_display].describe().to_string()))
 
         ## check for over-specified model
         if row_sum > df.shape[0]:
