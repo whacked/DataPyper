@@ -283,14 +283,16 @@ class DataSelector(BaseInterface):
         if idx_duplicated_onset.sum() > 0:
             v_duplicated_onset = dfonset[idx_duplicated_onset]['onset']
             col_display = [k for k in dfonset.keys() if k != ENDTIME_COLNAME]
-            raise Exception("""
+            exp_string = """
                     Overlapping events found!
 
                     These onsets are duplicated in your event specification:
 
                     \n%s
             
-            """ % (dfonset[dfonset['onset'].isin(v_duplicated_onset)][col_display].describe().to_string()))
+            """ % (dfonset[dfonset['onset'].isin(v_duplicated_onset)][col_display].describe().to_string())
+            print(exp_string)
+            raise Exception(exp_string)
 
         ## check for over-specified model
         if row_sum > df.shape[0]:
@@ -391,7 +393,7 @@ if __name__ == "__main__":
 
         ds = DataSelector(
                 data_frame = df,
-                amplitude_column = 'height',
+                amplitude_definition = 'PRICE',
                 condition_definition = [
                 "remove! = label.str.contains('INFO:wait_for_scanner')",
                 "PROD_run_1 = (run_number == 1) & (evname == 'PRODUCT')",
