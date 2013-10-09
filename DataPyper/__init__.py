@@ -301,7 +301,7 @@ class DataSelector(BaseInterface):
 
                     \n%s
             
-            """ % (dfonset[dfonset['onset'].isin(v_duplicated_onset)][col_display].describe().to_string())
+            """ % (dfonset[dfonset['onset'].isin(v_duplicated_onset)][col_display].to_string())
             print(exp_string)
             raise Exception(exp_string)
 
