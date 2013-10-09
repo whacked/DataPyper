@@ -254,18 +254,24 @@ class DataSelector(BaseInterface):
             del idx_match
 
         ## apply run-time onset/duration manipulation if applicable
+        lsadjust_endtime = [] ## ENDTIME was derived before this manipulation; after it, we need to re-adjust
         if self.inputs.duration_definition:
             for k, v in self.inputs.duration_definition.items():
+                lsadjust_endtime.append(k)
                 if type(v) is int or type(v) is float:
                     dcond[k]['duration'] = v
                 elif type(v) == types.FunctionType:
                     dcond[k]['duration'] = v(dcond[k]['duration'])
         if self.inputs.onset_definition:
             for k, v in self.inputs.onset_definition.items():
+                lsadjust_endtime.append(k)
                 if type(v) is int or type(v) is float:
                     dcond[k]['onset'] = v
                 elif type(v) == types.FunctionType:
                     dcond[k]['onset'] = v(dcond[k]['onset'])
+        ## apply the re-adjusted ENDTIME here
+        for k in lsadjust_endtime:
+            dcond[k][ENDTIME_COLNAME] = dcond[k]['onset'] + dcond[k]['duration']
 
         dfonset = pd.concat(dcond.values())
 
