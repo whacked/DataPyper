@@ -6,6 +6,7 @@ from nipype.interfaces.base import TraitedSpec, BaseInterface, Bunch, isdefined
 from nipype.interfaces.traits_extension import traits # , File
 import nipype.pipeline.engine as pe
 
+import types
 
 ## TODO
 # in the exec part pandas doesn't like columns with dots in them
@@ -108,6 +109,13 @@ class DataSelectorInputSpec(TraitedSpec):
                     which implies your DataFrame has a colum called 'runnum',
                     and you will supply the actual value at run-time to the
                     input port called 'run_number'
+            """)
+    duration_definition    = traits.Dict(desc = """\
+            we look for matching column names and assign durations if applicable.
+
+            keys are columns. if value is:
+            number: assign the number to the column
+            function: calls the function with the currently assigned column (i.e. 'duration')
             """)
     amplitude_definition   = traits.Any(desc = """\
                     `string` specifying the column name to be used as the
@@ -317,6 +325,13 @@ class DataSelector(BaseInterface):
                 ampmap = dict([(condname, self.inputs.amplitude_definition.get(condname)) for condname in condname_list])
         else:
             ampmap = dict([(condname, None) for condname in condname_list])
+
+        if self.inputs.duration_definition:
+            for k, v in self.inputs.duration_definition:
+                if type(v) is int or type(v) is float:
+                    dcond[k]['duration'] = v
+                elif type(v) == types.FunctionType:
+                    dcond[k]['duration'] = v(dcond[k]['duration'])
 
         self._subject_info = Bunch(
                 conditions = condname_list,
