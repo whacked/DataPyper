@@ -2,6 +2,10 @@ import os
 import numpy as np
 import pandas as pd
 
+## force print options to be unusually large, to prevent it from showing just
+## summary information when overlap is detected
+pd.set_printoptions(max_rows=200, max_columns=50)
+
 from nipype.interfaces.base import TraitedSpec, BaseInterface, Bunch, isdefined
 from nipype.interfaces.traits_extension import traits # , File
 import nipype.pipeline.engine as pe
