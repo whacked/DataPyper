@@ -249,6 +249,20 @@ class DataSelector(BaseInterface):
                 row_sum += dcond[condname].shape[0]
             del idx_match
 
+        ## apply run-time onset/duration manipulation if applicable
+        if self.inputs.duration_definition:
+            for k, v in self.inputs.duration_definition:
+                if type(v) is int or type(v) is float:
+                    dcond[k]['duration'] = v
+                elif type(v) == types.FunctionType:
+                    dcond[k]['duration'] = v(dcond[k]['duration'])
+        if self.inputs.onset_definition:
+            for k, v in self.inputs.onset_definition:
+                if type(v) is int or type(v) is float:
+                    dcond[k]['onset'] = v
+                elif type(v) == types.FunctionType:
+                    dcond[k]['onset'] = v(dcond[k]['onset'])
+
         dfonset = pd.concat(dcond.values())
 
         ## FIXME
@@ -328,19 +342,6 @@ class DataSelector(BaseInterface):
                 ampmap = dict([(condname, self.inputs.amplitude_definition.get(condname)) for condname in condname_list])
         else:
             ampmap = dict([(condname, None) for condname in condname_list])
-
-        if self.inputs.duration_definition:
-            for k, v in self.inputs.duration_definition:
-                if type(v) is int or type(v) is float:
-                    dcond[k]['duration'] = v
-                elif type(v) == types.FunctionType:
-                    dcond[k]['duration'] = v(dcond[k]['duration'])
-        if self.inputs.onset_definition:
-            for k, v in self.inputs.onset_definition:
-                if type(v) is int or type(v) is float:
-                    dcond[k]['onset'] = v
-                elif type(v) == types.FunctionType:
-                    dcond[k]['onset'] = v(dcond[k]['onset'])
 
         self._subject_info = Bunch(
                 conditions = condname_list,
