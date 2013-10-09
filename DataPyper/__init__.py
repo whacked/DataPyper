@@ -117,6 +117,9 @@ class DataSelectorInputSpec(TraitedSpec):
             number: assign the number to the column
             function: calls the function with the currently assigned column (i.e. 'duration')
             """)
+    onset_definition    = traits.Dict(desc = """\
+            same as above
+            """)
     amplitude_definition   = traits.Any(desc = """\
                     `string` specifying the column name to be used as the
                     regressor height (note this gets ignored in SPM level 1)
@@ -332,6 +335,12 @@ class DataSelector(BaseInterface):
                     dcond[k]['duration'] = v
                 elif type(v) == types.FunctionType:
                     dcond[k]['duration'] = v(dcond[k]['duration'])
+        if self.inputs.onset_definition:
+            for k, v in self.inputs.onset_definition:
+                if type(v) is int or type(v) is float:
+                    dcond[k]['onset'] = v
+                elif type(v) == types.FunctionType:
+                    dcond[k]['onset'] = v(dcond[k]['onset'])
 
         self._subject_info = Bunch(
                 conditions = condname_list,
