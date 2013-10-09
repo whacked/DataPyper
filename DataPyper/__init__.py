@@ -251,13 +251,13 @@ class DataSelector(BaseInterface):
 
         ## apply run-time onset/duration manipulation if applicable
         if self.inputs.duration_definition:
-            for k, v in self.inputs.duration_definition:
+            for k, v in self.inputs.duration_definition.items():
                 if type(v) is int or type(v) is float:
                     dcond[k]['duration'] = v
                 elif type(v) == types.FunctionType:
                     dcond[k]['duration'] = v(dcond[k]['duration'])
         if self.inputs.onset_definition:
-            for k, v in self.inputs.onset_definition:
+            for k, v in self.inputs.onset_definition.items():
                 if type(v) is int or type(v) is float:
                     dcond[k]['onset'] = v
                 elif type(v) == types.FunctionType:
