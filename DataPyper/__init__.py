@@ -357,7 +357,7 @@ class DataSelector(BaseInterface):
                 conditions = condname_list,
                 onsets     = [cond['onset'   ].tolist() for cond in dcond.values()],
                 durations  = [cond['duration'].tolist() for cond in dcond.values()],
-                amplitudes = [ampmap[condname] and cond[ampmap[condname]].tolist() or None for condname in condname_list],
+                amplitudes = [ampmap[condname] and cond[ampmap[condname]].tolist() or None for condname, cond in dcond.items()],
                 )
 
         runtime.returncode = 0
