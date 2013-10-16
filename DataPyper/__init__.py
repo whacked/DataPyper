@@ -309,19 +309,15 @@ class DataSelector(BaseInterface):
         lsksort.append("onset")
 
         dfonset_sorted = dfonset.sort(lsksort)
-        ## skip check if absurdly large tolerance is given
-        if self.inputs.onset_overlap_tolerance > dfonset_sorted[ENDTIME_COLNAME].max():
-            idx_is_overlap = []
-        else:
-            ## check for time overlap (some other event happens during another event)
-            ## naive test of whether any onset begins before the previous row's end time
-            idx_is_overlap = dfonset_sorted.index[(
-                ## next event's onset time + tolerance < this event's end time
-                ((dfonset_sorted['onset'][1:] + 1.2) < dfonset_sorted[ENDTIME_COLNAME][:-1])
-                ## the check only applies when the
-                ## next event's onset time must also > this event's onset time
-                & (dfonset_sorted['onset'][:-1] < dfonset_sorted['onset'][1:])
-                )]
+        ## check for time overlap (some other event happens during another event)
+        ## naive test of whether any onset begins before the previous row's end time
+        idx_is_overlap = dfonset_sorted.index[(
+            ## next event's onset time + tolerance < this event's end time
+            ((dfonset_sorted['onset'][1:] + 1.2) < dfonset_sorted[ENDTIME_COLNAME][:-1])
+            ## the check only applies when the
+            ## next event's onset time must also > this event's onset time
+            & (dfonset_sorted['onset'][:-1] < dfonset_sorted['onset'][1:])
+            )]
         if len(idx_is_overlap):
             sidx_is_overlap = idx_is_overlap.to_series()
             sidx_is_overlap = sidx_is_overlap.append(sidx_is_overlap - 1)
@@ -336,20 +332,22 @@ class DataSelector(BaseInterface):
             """ % (dfonset_sorted.ix[sidx_is_overlap]))
 
         ## check for duplicate onsets
-        idx_duplicated_onset = dfonset.duplicated('onset')
-        if idx_duplicated_onset.sum() > 0:
-            v_duplicated_onset = dfonset[idx_duplicated_onset]['onset']
-            col_display = [k for k in dfonset.keys() if k != ENDTIME_COLNAME]
-            exp_string = """
-                    Overlapping events found!
+        ## skip check if absurdly large tolerance is given
+        if self.inputs.onset_overlap_tolerance < dfonset_sorted[ENDTIME_COLNAME].max():
+            idx_duplicated_onset = dfonset.duplicated('onset')
+            if idx_duplicated_onset.sum() > 0:
+                v_duplicated_onset = dfonset[idx_duplicated_onset]['onset']
+                col_display = [k for k in dfonset.keys() if k != ENDTIME_COLNAME]
+                exp_string = """
+                        Overlapping events found!
 
-                    These onsets are duplicated in your event specification:
+                        These onsets are duplicated in your event specification:
 
-                    \n%s
-            
-            """ % (dfonset[dfonset['onset'].isin(v_duplicated_onset)][col_display].to_string())
-            print(exp_string)
-            raise Exception(exp_string)
+                        \n%s
+                
+                """ % (dfonset[dfonset['onset'].isin(v_duplicated_onset)][col_display].to_string())
+                print(exp_string)
+                raise Exception(exp_string)
 
         ## check for over-specified model
         if row_sum > df.shape[0]:
