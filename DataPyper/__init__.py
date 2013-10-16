@@ -308,13 +308,13 @@ class DataSelector(BaseInterface):
             lsksort.append("trial_number")
         lsksort.append("onset")
 
+        dfonset_sorted = dfonset.sort(lsksort)
         ## skip check if absurdly large tolerance is given
         if self.inputs.onset_overlap_tolerance > dfonset_sorted[ENDTIME_COLNAME][-1]:
             idx_is_overlap = []
         else:
             ## check for time overlap (some other event happens during another event)
             ## naive test of whether any onset begins before the previous row's end time
-            dfonset_sorted = dfonset.sort(lsksort)
             idx_is_overlap = dfonset_sorted.index[(
                 ## next event's onset time + tolerance < this event's end time
                 ((dfonset_sorted['onset'][1:] + 1.2) < dfonset_sorted[ENDTIME_COLNAME][:-1])
