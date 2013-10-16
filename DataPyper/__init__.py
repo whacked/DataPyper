@@ -310,7 +310,7 @@ class DataSelector(BaseInterface):
 
         dfonset_sorted = dfonset.sort(lsksort)
         ## skip check if absurdly large tolerance is given
-        if self.inputs.onset_overlap_tolerance > dfonset_sorted[ENDTIME_COLNAME][-1]:
+        if self.inputs.onset_overlap_tolerance > dfonset_sorted[ENDTIME_COLNAME].max():
             idx_is_overlap = []
         else:
             ## check for time overlap (some other event happens during another event)
