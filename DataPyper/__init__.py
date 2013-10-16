@@ -124,6 +124,26 @@ class DataSelectorInputSpec(TraitedSpec):
     onset_definition    = traits.Dict(desc = """\
             same as above
             """)
+    onset_overlap_tolerance = traits.Float(1.2, desc = """\
+            WORK IN PROGRESS!
+            manipulate this value to change how stringent the overlap detection is.
+            Ref `idx_is_overlap` in the code.
+
+            Default is 1.2s, which is used thusly:
+
+            ((dfonset_sorted['onset'][1:] + 1.2) < dfonset_sorted[ENDTIME_COLNAME][:-1])
+
+            so we are looking at whether the expected end time of the
+            CURRENT EVENT, which is the ENDTIME_COLNAME part, does not
+            overrun 1.2 seconds past the onset of the NEXT event.
+
+            The comparison would be more straightforward in English if the
+            inequaity was reversed.
+
+            to disable this, set it to any value greater than the total task duration.
+            it's kludgy but i haven't figured out how to allow None as input
+            
+            """, usedefault = True)
     amplitude_definition   = traits.Any(desc = """\
                     `string` specifying the column name to be used as the
                     regressor height (note this gets ignored in SPM level 1)
@@ -288,18 +308,20 @@ class DataSelector(BaseInterface):
             lsksort.append("trial_number")
         lsksort.append("onset")
 
-        ## FIXME:
-        ## the overlap check tolerance below should be configurable
-        ## check for time overlap (some other event happens during another event)
-        ## naive test of whether any onset begins before the previous row's end time
-        dfonset_sorted = dfonset.sort(lsksort)
-        idx_is_overlap = dfonset_sorted.index[(
-            ## next event's onset time + tolerance < this event's end time
-            ((dfonset_sorted['onset'][1:] + 1.2) < dfonset_sorted[ENDTIME_COLNAME][:-1])
-            ## the check only applies when the
-            ## next event's onset time must also > this event's onset time
-            & (dfonset_sorted['onset'][:-1] < dfonset_sorted['onset'][1:])
-            )]
+        ## skip check if absurdly large tolerance is given
+        if self.inputs.onset_overlap_tolerance > dfonset_sorted[ENDTIME_COLNAME][-1]:
+            idx_is_overlap = []
+        else:
+            ## check for time overlap (some other event happens during another event)
+            ## naive test of whether any onset begins before the previous row's end time
+            dfonset_sorted = dfonset.sort(lsksort)
+            idx_is_overlap = dfonset_sorted.index[(
+                ## next event's onset time + tolerance < this event's end time
+                ((dfonset_sorted['onset'][1:] + 1.2) < dfonset_sorted[ENDTIME_COLNAME][:-1])
+                ## the check only applies when the
+                ## next event's onset time must also > this event's onset time
+                & (dfonset_sorted['onset'][:-1] < dfonset_sorted['onset'][1:])
+                )]
         if len(idx_is_overlap):
             sidx_is_overlap = idx_is_overlap.to_series()
             sidx_is_overlap = sidx_is_overlap.append(sidx_is_overlap - 1)
