@@ -72,6 +72,7 @@ class CSVFile(BaseInterface):
 
 
 class DataSelectorInputSpec(TraitedSpec):                                                                                                 
+    suppress_overlap_warning = traits.Bool(desc = "should overlap warnings be NOT reported?", value = False, usedefault = True)
     data_frame             = traits.Any(desc = "input Pandas DataFrame object")
     condition_definition   = traits.List(desc = """\
                     a list of strings specifying the condition selection
@@ -318,7 +319,7 @@ class DataSelector(BaseInterface):
             ## next event's onset time must also > this event's onset time
             & (dfonset_sorted['onset'][:-1] < dfonset_sorted['onset'][1:])
             )]
-        if len(idx_is_overlap):
+        if len(idx_is_overlap) and not self.inputs.suppress_overlap_warning:
             sidx_is_overlap = idx_is_overlap.to_series()
             sidx_is_overlap = sidx_is_overlap.append(sidx_is_overlap - 1)
             sidx_is_overlap.sort()
