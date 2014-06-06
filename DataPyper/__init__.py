@@ -2,9 +2,15 @@ import os
 import numpy as np
 import pandas as pd
 
-## force print options to be unusually large, to prevent it from showing just
-## summary information when overlap is detected
-pd.set_printoptions(max_rows=200, max_columns=50)
+try:
+    # this is for older version compat
+    # set_printoptions is deprecated
+    ## force print options to be unusually large, to prevent it from showing just
+    ## summary information when overlap is detected
+    pd.set_printoptions(max_rows=200, max_columns=50)
+except AttributeError:
+    pd.set_option('display.max_columns', 50)
+    pd.set_option('display.max_rows', 200)
 
 from nipype.interfaces.base import TraitedSpec, BaseInterface, Bunch, isdefined
 from nipype.interfaces.traits_extension import traits # , File
