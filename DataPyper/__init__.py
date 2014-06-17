@@ -287,6 +287,8 @@ class DataSelector(BaseInterface):
                 lsadjust_endtime.append(k)
                 if type(v) is int or type(v) is float:
                     dcond[k]['duration'] = v
+                elif v in df:
+                    dcond[k] = df[v]
                 elif type(v) == types.FunctionType:
                     dcond[k]['duration'] = v(dcond[k]['duration'])
         if self.inputs.onset_definition:
