@@ -127,6 +127,7 @@ class DataSelectorInputSpec(TraitedSpec):
             keys are columns. if value is:
             number: assign the number to the column
             function: calls the function with the currently assigned column (i.e. 'duration')
+            column name: take directly from referenced column in source data
             """)
     onset_definition    = traits.Dict(desc = """\
             same as above
@@ -288,10 +289,10 @@ class DataSelector(BaseInterface):
                 lsadjust_endtime.append(k)
                 if type(v) is int or type(v) is float:
                     dcond[k]['duration'] = v
-                elif v in df:
-                    dcond[k] = df[v][dcond_index[k]]
                 elif type(v) == types.FunctionType:
                     dcond[k]['duration'] = v(dcond[k]['duration'])
+                elif v in df:
+                    dcond[k]['duration'] = df[v][dcond_index[k]]
         if self.inputs.onset_definition:
             for k, v in self.inputs.onset_definition.items():
                 lsadjust_endtime.append(k)
@@ -299,6 +300,8 @@ class DataSelector(BaseInterface):
                     dcond[k]['onset'] = v
                 elif type(v) == types.FunctionType:
                     dcond[k]['onset'] = v(dcond[k]['onset'])
+                elif v in df:
+                    dcond[k]['onset'] = df[v][dcond_index[k]]
         ## apply the re-adjusted ENDTIME here
         for k in lsadjust_endtime:
             dcond[k][ENDTIME_COLNAME] = dcond[k]['onset'] + dcond[k]['duration']
