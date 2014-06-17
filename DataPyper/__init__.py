@@ -251,6 +251,7 @@ class DataSelector(BaseInterface):
             exec("%s = df['%s']" % (varname, k))
 
         dcond = {}
+        dcond_index = {} # stores indexes that produced dcond. referenced in the duration_defintion block below
         dcount = {}
         row_sum = 0
         for conddef in self.inputs.condition_definition:
@@ -276,9 +277,9 @@ class DataSelector(BaseInterface):
                 df = df[~idx_match]
             else:
                 dcond[condname] = df[idx_match]
+                dcond_index[condname] = idx_match
                 dcount[conddef] = dcond[condname].shape[0]
                 row_sum += dcond[condname].shape[0]
-            del idx_match
 
         ## apply run-time onset/duration manipulation if applicable
         lsadjust_endtime = [] ## ENDTIME was derived before this manipulation; after it, we need to re-adjust
@@ -288,7 +289,7 @@ class DataSelector(BaseInterface):
                 if type(v) is int or type(v) is float:
                     dcond[k]['duration'] = v
                 elif v in df:
-                    dcond[k] = df[v]
+                    dcond[k] = df[v][dcond_index[k]]
                 elif type(v) == types.FunctionType:
                     dcond[k]['duration'] = v(dcond[k]['duration'])
         if self.inputs.onset_definition:
